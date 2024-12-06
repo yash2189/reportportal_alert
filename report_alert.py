@@ -131,7 +131,7 @@ class ReportPortalClient:
                 # Start time range filters
                 if 'start_time_from' in filter_options:
                     params['filter.gt.startTime'] = filter_options['start_time_from']
-                
+                 
                 if 'start_time_to' in filter_options:
                     params['filter.lt.startTime'] = filter_options['start_time_to']
                 
@@ -519,24 +519,18 @@ def format_output(launches: List[Dict], output_format: str):
                     print(f"  {attr.get('key', 'N/A')}: {attr.get('value', 'N/A')}")
 
 def convert_timestamp_to_human_readable(timestamp):
-    """
-    Converts a timestamp to a human-readable format.
-    
+    """Converts a Unix timestamp (in milliseconds) to a human-readable format.
+
     Args:
-        timestamp: The timestamp string from Report Portal
-    
+        timestamp: The Unix timestamp in milliseconds.
+
     Returns:
         A string representing the human-readable date and time.
     """
-    if not timestamp:
-        return ""
-    try:
-        # Parse the ISO format timestamp
-        dt = datetime.datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
-        # Convert to local timezone and format
-        return dt.astimezone().strftime('%Y-%m-%d %H:%M:%S %Z')
-    except (ValueError, TypeError):
-        return timestamp
+
+    dt_object = datetime.datetime.fromtimestamp(timestamp / 1000)  # Convert to seconds
+    formatted_time = dt_object.strftime('%Y-%m-%d %H:%M:%S')
+    return formatted_time
 
 def main():
     """
