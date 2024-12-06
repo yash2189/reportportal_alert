@@ -3,13 +3,16 @@ import json
 import os
 import requests
 import logging
-from typing import Dict, List, Any, Optional
-from tabulate import tabulate
+from typing import Dict, List, Optional, Any
+from rich.console import Console
+from rich.table import Table
+from rich.text import Text
 from datetime import datetime, timedelta
 import shelve
 import hashlib
 import time
 from pathlib import Path
+import datetime
 
 class ReportPortalClient:
     """
@@ -450,24 +453,42 @@ def parse_attributes(attr_args: Optional[List[str]]) -> Dict[str, str]:
 
 def format_output(launches: List[Dict], output_format: str):
     """
-    Format and print launches based on output type
+    Format and print launches based on output format
     
     :param launches: List of launch dictionaries
     :param output_format: Output format 
     """
     status_summary = {}
+    
     if output_format == 'json':
         print(json.dumps(launches, indent=2))
     elif output_format == 'table':
+        console = Console()
+        
+        # Create and style the table
+        table = Table(show_header=True, header_style="bold magenta")
+        table.add_column("Launch ID", style="cyan")
+        table.add_column("Launch Name", style="green")
+        table.add_column("Status", style="yellow")
+        table.add_column("Start Time", style="blue")
+        table.add_column("Failed Tests", style="red")
+        
         for launch in launches:
             status = launch.get('status', 'UNKNOWN')
             status_summary[status] = status_summary.get(status, 0) + 1
-        table_data = [[launch.get('id') ,launch.get('name'), launch.get('status'), launch.get('startTime'), launch.get('Failed Tests')] for launch in launches]
-        headers = ['Launch ID', 'Launch Name', 'Status', 'Start Time', 'Failed Tests']
-        print("\nFailed Launches:")
-        print(tabulate(table_data, headers=headers, tablefmt='grid'))
-
-
+            start_time = convert_timestamp_to_human_readable(launch.get('startTime'))
+            # Add row with styled content
+            table.add_row(
+                str(launch.get('id', '')),
+                str(launch.get('name', 'Unknown')),
+                str(status),
+                str(start_time),
+                str(launch.get('statistics').get('executions').get('failed'))
+            )
+        
+        console.print("\nFailed Launches:")
+        console.print(table)
+        
         print("\nStatus Summary:")
         for status, count in status_summary.items():
             print(f"{status}: {count}")
@@ -497,7 +518,19 @@ def format_output(launches: List[Dict], output_format: str):
                 for attr in attributes:
                     print(f"  {attr.get('key', 'N/A')}: {attr.get('value', 'N/A')}")
 
+def convert_timestamp_to_human_readable(timestamp):
+    """Converts a Unix timestamp (in milliseconds) to a human-readable format.
 
+    Args:
+        timestamp: The Unix timestamp in milliseconds.
+
+    Returns:
+        A string representing the human-readable date and time.
+    """
+
+    dt_object = datetime.datetime.fromtimestamp(timestamp / 1000)  # Convert to seconds
+    formatted_time = dt_object.strftime('%Y-%m-%d %H:%M:%S')
+    return formatted_time
 
 def main():
     """
@@ -578,10 +611,23 @@ def main():
             # Prepare table data
             if args.test_name:
                 print(f"Failed Filtered Test Cases that contains: {args.test_name}")
-            table_data = [[test['launch_id'] ,test['id'], test['name'], test['suite_name'], test['url']] for test in all_failed_tests]
-            headers = ['Launch ID', 'Test ID', 'Test Name', 'Suite Name', 'URL']
-            print("\nFailed Test Cases: {}".format(len(all_failed_tests)))
-            print(tabulate(table_data, headers=headers, tablefmt='grid'))
+            console = Console()
+            table = Table(show_header=True, header_style="bold magenta")
+            table.add_column("Launch ID", style="cyan")
+            table.add_column("Test ID", style="green")
+            table.add_column("Test Name", style="yellow")
+            table.add_column("Suite Name", style="blue")
+            table.add_column("URL", style="red")
+            for test in all_failed_tests:
+                table.add_row(
+                    str(test.get('launch_id', '')),
+                    str(test.get('id', '')),
+                    str(test.get('name', '')),
+                    str(test.get('suite_name', '')),
+                    str(test.get('url', ''))
+                )
+            console.print("\nFailed Test Cases: {}".format(len(all_failed_tests)))
+            console.print(table)
         else:
             print("\nNo failed test cases found.")
     # Output launches
