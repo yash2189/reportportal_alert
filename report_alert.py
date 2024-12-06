@@ -11,6 +11,7 @@ import hashlib
 import time
 from pathlib import Path
 import datetime
+import csv
 
 class ReportPortalClient:
     """
@@ -412,11 +413,11 @@ def create_cli_parser() -> argparse.ArgumentParser:
     
     parser.add_argument('-l', '--limit', 
                         type=int, 
-                        default=20, 
-                        help='Number of launches per page (default: 20)')
+                        default=50, 
+                        help='Number of launches per page (default: 50)')
     
     parser.add_argument('-o', '--output', 
-                        choices=['json', 'table', 'summary', 'detailed'], 
+                        choices=['json', 'table', 'summary', 'detailed', 'csv'], 
                         default='table', 
                         help='Output format (default: table)')
     parser.add_argument('--failed-tests', action='store_true', help='Fetch failed test cases with links from launches')  # Added CLI argument
@@ -455,6 +456,7 @@ def format_output(launches: List[Dict], output_format: str, project_name: Option
     
     :param launches: List of launch dictionaries
     :param output_format: Output format
+    :param project_name: Project name for generating launch URLs
     """
     status_summary = {}
     
@@ -487,6 +489,24 @@ def format_output(launches: List[Dict], output_format: str, project_name: Option
         print("\nStatus Summary:")
         for status, count in status_summary.items():
             print(f"{status}: {count}")
+    elif output_format == 'csv':
+        with open('launches.csv', 'w', newline='') as csvfile:
+            csvwriter = csv.writer(csvfile)
+            csvwriter.writerow(["Launch ID", "Launch Name", "Status", "Start Time", "Failed Tests", "Link to Launch"])
+            for launch in launches:
+                status = launch.get('status', 'UNKNOWN')
+                start_time = convert_timestamp_to_human_readable(launch.get('startTime'))
+                url = f"{parse_config()['base_url']}/ui/#{project_name}/launches/{launch.get('id')}"
+                csvwriter.writerow([
+                    launch.get('id', ''),
+                    launch.get('name', 'Unknown'),
+                    status,
+                    start_time,
+                    launch.get('statistics', {}).get('executions', {}).get('failed', 0),
+                    url
+                ])
+        print("CSV file 'launches.csv' has been created.")
+    
     elif output_format == 'detailed':
         for launch in launches:
             print("\n--- Launch Details ---")
