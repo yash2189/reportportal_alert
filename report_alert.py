@@ -629,6 +629,20 @@ def main():
             
             print("\nFailed Test Cases: {}".format(len(all_failed_tests)))
             print(tabulate(rows, headers=headers, tablefmt='grid'))
+            
+            if args.output == 'csv':
+                with open('failed_tests.csv', 'w', newline='') as csvfile:
+                    csvwriter = csv.writer(csvfile)
+                    csvwriter.writerow(["Launch ID", "Test ID", "Test Name", "Suite Name", "URL"])
+                    for test in all_failed_tests:
+                        csvwriter.writerow([
+                            test.get('launch_id', ''),
+                            test.get('id', ''),
+                            test.get('name', ''),
+                            test.get('suite_name', ''),
+                            test.get('url', '')
+                        ])
+                print("CSV file 'failed_tests.csv' has been created.")
         else:
             print("\nNo failed test cases found for filter criteria.")
     # Output launches
