@@ -168,7 +168,8 @@ class ReportPortalClient:
     
     def fetch_failed_test_cases(self, 
                               project_name: str, 
-                              launch_id: str = None, 
+                              launch_id: str = None,
+                              launch_name: str = None, 
                               page_num: int = 1,
                               page_size: int = 50,
                               filter_options: Optional[Dict[str, Any]] = None) -> List[Dict[str, str]]:
@@ -191,7 +192,7 @@ class ReportPortalClient:
             # If no specific launch_id provided, get launches based on filters
             launches_to_check = []
             if launch_id:
-                launches_to_check = [{'id': launch_id}]
+                launches_to_check = [{'id': launch_id, 'name': launch_name}]
             else:
                 # Ensure we're only getting failed launches
                 if filter_options is None:
@@ -211,7 +212,7 @@ class ReportPortalClient:
                     return []
             
             # Process each launch
-            for launch in launches_to_check:
+            for launch in launches_to_check:   
                 current_launch_id = launch['id']
                 launch_name = launch.get('name', 'Unknown Launch')
                 self.logger.info(f"Processing failed tests for launch {launch_name} (ID: {current_launch_id})")
@@ -458,13 +459,11 @@ def format_output(launches: List[Dict], output_format: str):
     if output_format == 'json':
         print(json.dumps(launches, indent=2))
     elif output_format == 'table':
-        print(f"{'ID':<10} {'Name':<30} {'Status':<10} {'Start Time':<25} {'Tags'}")
-        print("-" * 80)
         for launch in launches:
             status = launch.get('status', 'UNKNOWN')
             status_summary[status] = status_summary.get(status, 0) + 1
-        table_data = [[launch.get('id') ,launch.get('name'), launch.get('status'), launch.get('startTime'), launch.get('tags')] for launch in launches]
-        headers = ['Launch ID', 'Launch Name', 'Status', 'Start Time', 'Tags']
+        table_data = [[launch.get('id') ,launch.get('name'), launch.get('status'), launch.get('startTime'), launch.get('Failed Tests')] for launch in launches]
+        headers = ['Launch ID', 'Launch Name', 'Status', 'Start Time', 'Failed Tests']
         print("\nFailed Launches:")
         print(tabulate(table_data, headers=headers, tablefmt='grid'))
 
@@ -570,8 +569,9 @@ def main():
         all_failed_tests = []
         for launch in launches:
             launch_id = launch.get('id')
+            launch_name = launch.get('name')
             if launch_id:
-                failed_tests = rp_client.fetch_failed_test_cases(args.project, launch_id, page_num=args.page, page_size=args.limit, filter_options=filter_options)
+                failed_tests = rp_client.fetch_failed_test_cases(args.project, launch_id, launch_name, page_num=args.page, page_size=args.limit, filter_options=filter_options)
                 all_failed_tests.extend(failed_tests)
         
         if all_failed_tests:
