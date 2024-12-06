@@ -8,7 +8,9 @@ This Python script interacts with the Report Portal API to fetch and analyze tes
 - Multiple output formats:
   - Table format (default)
   - JSON format
-  - HTML Report with detailed launch information
+  - Summary format
+  - Detailed format
+- Failed test case retrieval with links
 - Attribute-based filtering
 - Caching support to improve performance
 - Configurable through environment variables or config file
@@ -17,9 +19,9 @@ This Python script interacts with the Report Portal API to fetch and analyze tes
 
 - Python 3.6 or higher
 - Required Python packages (install via pip):
-  - requests
-  - tabulate
-  - jinja2 (for HTML reports)
+  ```bash
+  pip install -r requirements.txt
+  ```
 
 ## Configuration
 
@@ -31,11 +33,13 @@ The script can be configured in two ways:
 ```json
 {
     "base_url": "https://your-reportportal-instance",
-    "token": "your-api-token",
-    "username": "your-username",
-    "password": "your-password"
+    "token": "your-api-token"
 }
 ```
+
+### Environment Variables
+- `REPORT_PORTAL_URL`: Base URL of your Report Portal instance
+- `REPORT_PORTAL_TOKEN`: Your Report Portal authentication token
 
 ## Usage
 
@@ -46,43 +50,54 @@ python report_alert.py --project PROJECT_NAME
 
 With filters:
 ```bash
-python report_alert.py --project PROJECT_NAME --attributes "key1=value1" "key2=value2"
+python report_alert.py --project PROJECT_NAME --attr "key1=value1" "key2=value2"
 ```
 
-Generate HTML report:
+View failed test cases:
 ```bash
-python report_alert.py --project PROJECT_NAME --output html
+python report_alert.py --project PROJECT_NAME --failed-tests
 ```
 
 ### Command Line Arguments
 
 - `--project`: (Required) Project name in Report Portal
-- `--output`: Output format (table, json, or html)
-- `--attributes`: Filter launches by attributes (KEY=VALUE format)
-- `--page-size`: Number of launches to fetch per page
-- `--no-cache`: Disable caching
-- `--clear-cache`: Clear existing cache
-- `--config`: Path to config file
+- `--token`: Authentication token (overrides config file)
+- `-n, --name`: Filter launches by name (partial match)
+- `-s, --status`: Filter launches by status (PASSED, FAILED, STOPPED, INTERRUPTED, IN_PROGRESS)
+- `-t, --tags`: Filter launches by tags
+- `--start-from`: Fetch launches from this date (YYYY-MM-DD)
+- `--start-to`: Fetch launches up to this date (YYYY-MM-DD)
+- `--attr`: Filter by attributes in KEY=VALUE format
+- `-p, --page`: Page number (default: 1)
+- `-l, --limit`: Number of launches per page (default: 20)
+- `-o, --output`: Output format (json, table, summary, detailed)
+- `--failed-tests`: Fetch failed test cases with links from launches
+- `-tn, --test-name`: Filter launches by test name
+- `--reset-cache`: Clear the cache and fetch fresh data
+- `--cache-hours`: Cache expiry time in hours (default: 24)
 
 ## Output Formats
 
 1. Table Format (Default)
    - Displays launches in a formatted table
-   - Shows key information like name, status, and attributes
+   - Shows Launch ID, Name, Status, Start Time, and Failed Tests count
 
 2. JSON Format
    - Outputs raw JSON data
    - Useful for programmatic processing
 
-3. HTML Report
-   - Creates a detailed HTML report
-   - Includes launch statistics and detailed information
-   - Interactive table with sorting capabilities
+3. Summary Format
+   - Shows total launches count
+   - Displays status summary
+
+4. Detailed Format
+   - Shows detailed information for each launch
+   - Includes launch ID, name, status, start time, tags, and attributes
 
 ## Caching
 
 The script implements caching to improve performance:
 - Cache duration: 24 hours by default
-- Cache location: `~/.report_portal_cache`
-- Use `--no-cache` to bypass cache
-- Use `--clear-cache` to clear existing cache
+- Cache location: `~/.reportportal_cache`
+- Use `--reset-cache` to clear existing cache
+- Configure cache duration with `--cache-hours`
