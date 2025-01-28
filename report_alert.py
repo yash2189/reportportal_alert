@@ -12,7 +12,9 @@ import time
 from pathlib import Path
 import datetime
 import csv
+import urllib3
 
+verify_ssl = True
 class ReportPortalClient:
     """
     A wrapper client for interacting with Report Portal Server API with advanced attribute filtering
@@ -52,6 +54,8 @@ class ReportPortalClient:
             return False
         
         try:
+            global verify_ssl
+
             auth_endpoint = f"{self.base_url}/uat/sso/oauth/token"
             
             payload = {
@@ -69,7 +73,8 @@ class ReportPortalClient:
                 auth_endpoint, 
                 data=payload, 
                 headers=headers, 
-                auth=('ui', 'uiman')
+                auth=('ui', 'uiman'),
+                verify=verify_ssl
             )
             
             response.raise_for_status()
@@ -103,6 +108,8 @@ class ReportPortalClient:
                 raise ValueError("Authentication failed")
         
         try:
+            global verify_ssl
+
             launches_endpoint = f"{self.base_url}/api/v1/{project_name}/launch"
             
             headers = {
@@ -154,7 +161,8 @@ class ReportPortalClient:
             response = requests.get(
                 launches_endpoint, 
                 headers=headers, 
-                params=params
+                params=params,
+                verify=verify_ssl
             )
             self.logger.info(response.request.url)
             response.raise_for_status()
@@ -191,6 +199,8 @@ class ReportPortalClient:
         
         failed_tests = []
         try:
+            global verify_ssl
+            
             # If no specific launch_id provided, get launches based on filters
             launches_to_check = []
             if launch_id:
@@ -228,7 +238,7 @@ class ReportPortalClient:
                     'page.size': 100
                 }
                 
-                suites_response = requests.get(suites_endpoint, headers=headers, params=suite_params)
+                suites_response = requests.get(suites_endpoint, headers=headers, params=suite_params, verify=verify_ssl)
                 suites_response.raise_for_status()
                 suites_data = suites_response.json()
                 # Iterate through each suite
@@ -245,7 +255,7 @@ class ReportPortalClient:
                     }
                     if 'test_name' in filter_options:
                         test_params['filter.cnt.name'] = filter_options['test_name']
-                    tests_response = requests.get(suites_endpoint, headers=headers, params=test_params)
+                    tests_response = requests.get(suites_endpoint, headers=headers, params=test_params, verify=verify_ssl)
                     tests_response.raise_for_status()
                     tests_data = tests_response.json()
                     
@@ -373,7 +383,7 @@ def create_cli_parser() -> argparse.ArgumentParser:
     Create CLI argument parser
     
     :return: Configured ArgumentParser
-    """
+    """  
     parser = argparse.ArgumentParser(description='Report Portal Launch Retrieval Tool')
     
     # Required arguments
@@ -427,6 +437,9 @@ def create_cli_parser() -> argparse.ArgumentParser:
     # Cache management
     parser.add_argument('--reset-cache', action='store_true', help='Clear the cache and fetch fresh data')
     parser.add_argument('--cache-hours', type=int, default=24, help='Cache expiry time in hours (default: 24)')
+
+    # SSL management
+    parser.add_argument('--no-verify', action='store_true', help="Disable SSL verification")
     
     return parser
 
@@ -543,7 +556,14 @@ def main():
     """
     parser = create_cli_parser()
     args = parser.parse_args()
-    
+    global verify_ssl
+
+    if args.no_verify:
+        verify_ssl = False  
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)  
+    else:
+        verify_ssl = True  
+
     # Handle cache reset if requested
     if args.reset_cache:
         clear_cache()

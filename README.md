@@ -75,6 +75,7 @@ python report_alert.py --project PROJECT_NAME --failed-tests
 - `-tn, --test-name`: Filter launches by test name
 - `--reset-cache`: Clear the cache and fetch fresh data
 - `--cache-hours`: Cache expiry time in hours (default: 24)
+- `--no-verify`: Will disable SSL verification
 
 ## Output Formats
 
