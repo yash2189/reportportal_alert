@@ -1,54 +1,12 @@
 import argparse
-import requests
 import logging
-from typing import Dict, List, Any
+from typing import Dict, List
 from tabulate import tabulate
 from config_module import Config
 from cache_module import reset_cache, save_cache, load_cache
+from report_portal_client import ReportPortalClient
 
 logging.basicConfig(level=logging.INFO)
-
-class ReportPortalClient:
-    def __init__(self, base_url, token, verify_ssl=True):
-        self.base_url = base_url.rstrip('/')
-        self.token = token
-        self.verify_ssl = verify_ssl
-
-    def fetch_launch_ids(self, project_name: str, filters: Dict[str, str]) -> List[str]:
-        """
-        Fetch launch IDs with given filters.
-        """
-        launches_endpoint = f"{self.base_url}/api/v1/{project_name}/launch"
-        headers = {'Authorization': f'Bearer {self.token}', 'Content-Type': 'application/json'}
-        response = requests.get(launches_endpoint, headers=headers, params=filters, verify=self.verify_ssl)
-        response.raise_for_status()
-
-        # Process the response content
-        launches = response.json().get('content', [])
-        return [launch['id'] for launch in launches if 'id' in launch]
-
-    def fetch_suites(self, project_name: str, launch_id: str) -> List[Dict]:
-        suites_endpoint = f"{self.base_url}/api/v1/{project_name}/item"
-        headers = {'Authorization': f'Bearer {self.token}', 'Content-Type': 'application/json'}
-        params = {'filter.eq.launchId': launch_id, 'filter.eq.type': 'SUITE', 'page.size': 100}
-        logging.info(f"Fetching suites with params: {params}")
-        response = requests.get(suites_endpoint, headers=headers, params=params, verify=self.verify_ssl)
-        response.raise_for_status()
-        return response.json().get('content', [])
-
-    def fetch_tests(self, project_name: str, launch_id: str, suite_id: str) -> List[Dict]:
-        tests_endpoint = f"{self.base_url}/api/v1/{project_name}/item"
-        headers = {'Authorization': f'Bearer {self.token}', 'Content-Type': 'application/json'}
-        params = {
-            'filter.eq.launchId': launch_id,
-            'filter.eq.parentId': suite_id,
-            'filter.in.status': 'FAILED',
-            'page.size': 100
-        }
-        logging.info(f"Fetching tests with params: {params}")
-        response = requests.get(tests_endpoint, headers=headers, params=params, verify=self.verify_ssl)
-        response.raise_for_status()
-        return response.json().get('content', [])
 
 def prepare_filters(args) -> Dict[str, str]:
     filters = {}
@@ -111,7 +69,7 @@ def main():
             logging.error("No launches found for the project.")
             return
         logging.info(f"Found launch IDs: {launch_ids}")
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         logging.error(f"Error fetching launch IDs: {e}")
         return
 
@@ -155,7 +113,7 @@ def main():
             print("No failed tests found.")
 
         save_cache(cache)
-    except requests.exceptions.RequestException as e:
+    except Exception as e:
         logging.error(f"Error: {e}")
 
 if __name__ == "__main__":
