@@ -1,7 +1,8 @@
 import argparse
 import logging
-from typing import Dict, List
 from tabulate import tabulate
+from typing import Dict, List, Any , Optional
+import csv
 from config_module import Config
 from cache_module import reset_cache, save_cache, load_cache
 from report_portal_client import ReportPortalClient
@@ -38,6 +39,7 @@ def main():
     parser.add_argument('--start-to', help="End time filter (YYYY-MM-DD)")
     parser.add_argument('--attr', help="Attribute filter (key=value)")
     parser.add_argument('--no-verify', action='store_true', help="Disable SSL verification")
+    parser.add_argument('-o', '--output', choices=['table', 'csv','summary'], default='table', help='Output format (default: table)')
     parser.add_argument('--config', default="config.json", help="Path to configuration file")
     args = parser.parse_args()
 
@@ -103,14 +105,22 @@ def main():
             if launch_has_failures:
                 total_failed_launches += 1
 
-        if results_table:
+        if args.output == "csv":
+            csv_file = "report_results.csv"
+            with open(csv_file, mode="w", newline="") as file:
+                writer = csv.writer(file)
+                writer.writerow(["Suite Name", "Test Name", "Status", "Test URL"])  # Header
+                writer.writerows(results_table)  # Data
+
+            print(f"\nCSV report saved as: {csv_file}")
+        elif args.output == "table":
             print(tabulate(results_table, headers=["Suite Name", "Test Name", "Status", "Test URL"], tablefmt="grid"))
+            print(f"\n----Report Summary----")
             print(f"\nTotal Failed Tests: {total_failed_tests}")
             print(f"Total Suites with Failures: {total_failed_suites}")
             print(f"Total Launches with Failures: {total_failed_launches}")
         else:
             print("No failed tests found.")
-
         save_cache(cache)
     except Exception as e:
         logging.error(f"Error: {e}")

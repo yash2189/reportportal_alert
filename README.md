@@ -7,9 +7,7 @@ This Python script interacts with the Report Portal API to fetch and analyze tes
 - Fetch launches from Report Portal with advanced filtering
 - Multiple output formats:
   - Table format (default)
-  - JSON format
-  - Summary format
-  - Detailed format
+  - CSV format
 - Failed test case retrieval with links
 - Attribute-based filtering
 - Caching support to improve performance
@@ -26,7 +24,7 @@ This Python script interacts with the Report Portal API to fetch and analyze tes
 ## Configuration
 
 The script can be configured in two ways:
-1. Using a `.report-portal-config.json` file
+1. Using a `config.json` file
 2. Using environment variables
 
 ### Config File Structure
@@ -81,19 +79,11 @@ python report_alert.py --project PROJECT_NAME --failed-tests
 
 1. Table Format (Default)
    - Displays launches in a formatted table
-   - Shows Launch ID, Name, Status, Start Time, and Failed Tests count
+   - Shows Suite Name, Test Name, Status, Test URL , Summary Report
 
-2. JSON Format
-   - Outputs raw JSON data
-   - Useful for programmatic processing
-
-3. Summary Format
-   - Shows total launches count
-   - Displays status summary
-
-4. Detailed Format
-   - Shows detailed information for each launch
-   - Includes launch ID, name, status, start time, tags, and attributes
+2. CSV Format
+   - Creates a CSV for all the failed tests
+   - Includes Suite Name, Test Name, Status, Test URL
 
 ## Caching
 
