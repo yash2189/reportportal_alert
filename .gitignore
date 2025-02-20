@@ -2,3 +2,4 @@ config.json
 cache.db
 *.csv
 __pycache__
+.ruff_cache

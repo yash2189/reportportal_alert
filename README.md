@@ -8,6 +8,7 @@ This Python script interacts with the Report Portal API to fetch and analyze tes
 - Multiple output formats:
   - Table format (default)
   - CSV format
+  - Summary format
 - Failed test case retrieval with links
 - Attribute-based filtering
 - Caching support to improve performance
@@ -79,11 +80,14 @@ python report_alert.py --project PROJECT_NAME --failed-tests
 
 1. Table Format (Default)
    - Displays launches in a formatted table
-   - Shows Suite Name, Test Name, Status, Test URL , Summary Report
+   - Shows Suite Name, Test Name, Status, Test URL
 
 2. CSV Format
    - Creates a CSV for all the failed tests
    - Includes Suite Name, Test Name, Status, Test URL
+
+3. Summary Format
+   - Gives a summary of Failed Tests, Suites and Launches
 
 ## Caching
 
